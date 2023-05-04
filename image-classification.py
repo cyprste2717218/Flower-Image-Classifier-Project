@@ -38,3 +38,42 @@ validation_batches = validate_ds.cache().map(format_image).batch(BATCH_SIZE).pre
 
 test_batches = test_ds.cache().map(format_image).batch(BATCH_SIZE).prefetch(1)
 
+model=keras.models.Sequential([
+    keras.layers.Conv2D(filters=128, kernel_size=(15,15), strides=(4,4), activation='relu', input_shape=(224,224,3)),
+    keras.layers.BatchNormalization(),
+    keras.layers.MaxPool2D(pool_size=(2,2)),
+    keras.layers.Conv2D(filters=256, kernel_size=(5,5), strides=(1,1), activation='relu', padding="same"),
+    keras.layers.BatchNormalization(),
+    keras.layers.MaxPool2D(pool_size=(3,3)),
+    keras.layers.Conv2D(filters=256, kernel_size=(3,3), strides=(1,1), activation='relu', padding="same"),
+    keras.layers.Conv2D(filters=256, kernel_size=(3,3), strides=(1,1), activation='relu', padding="same"),
+    keras.layers.BatchNormalization(),
+    keras.layers.Conv2D(filters=512, kernel_size=(3,3), strides=(1,1), activation='relu', padding="same"),
+    keras.layers.BatchNormalization(),
+    keras.layers.Conv2D(filters=512, kernel_size=(3,3), strides=(1,1), activation='relu', padding="same"),
+    keras.layers.BatchNormalization(),
+    keras.layers.MaxPool2D(pool_size=(2,2)),
+    keras.layers.Flatten(),
+    keras.layers.Dense(1024,activation='relu'),
+    keras.layers.Dropout(0.5),
+    keras.layers.Dense(1024,activation='relu'),
+    keras.layers.Dropout(0.5),
+    keras.layers.Dense(102,activation='softmax')  
+    
+    
+])
+
+model.compile(
+    loss='sparse_categorical_crossentropy',
+    optimizer='SGD',
+    metrics=['accuracy'],
+    
+)
+model.summary()
+
+
+history = model.fit(train_batches,
+                    epochs=100,
+                    validation_data=validation_batches,
+                    validation_freq=1,
+                   )
