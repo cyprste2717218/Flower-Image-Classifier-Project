@@ -77,3 +77,17 @@ history = model.fit(train_batches,
                     validation_data=validation_batches,
                     validation_freq=1,
                    )
+
+f,ax=plt.subplots(2,1,figsize=(10,10)) 
+
+#Assigning the first subplot to graph training loss and validation loss
+ax[0].plot(model.history.history['loss'],color='b',label='Training Loss')
+ax[0].plot(model.history.history['val_loss'],color='r',label='Validation Loss')
+
+#Plotting the training accuracy and validation accuracy
+ax[1].plot(model.history.history['accuracy'],color='b',label='Training  Accuracy')
+ax[1].plot(model.history.history['val_accuracy'],color='r',label='Validation Accuracy')
+
+plt.legend()
+
+model.evaluate(test_batches)
