@@ -32,6 +32,24 @@ valid_data = valid_data.map(lambda x, y: (tf.image.resize(x, (224,224)), y))
 valid_data = valid_data.batch(batch_size)
 valid_data = valid_data.prefetch(tf.data.AUTOTUNE)
 
+
+tf.keras.optimizers.Adamax(
+    learning_rate=0.005,
+    beta_1=0.9,
+    beta_2=0.999,
+    epsilon=1e-07,
+    weight_decay=None,
+    clipnorm=None,
+    clipvalue=None,
+    global_clipnorm=None,
+    use_ema=False,
+    ema_momentum=0.99,
+    ema_overwrite_frequency=None,
+    jit_compile=True,
+    name="Adamax",
+
+)
+
 class ResNetBlock(Layer):
 
   def __init__(self, out_channels, first_stride=1):
@@ -93,11 +111,11 @@ print(model)
 
 
 
-model.compile(optimizer='SGD', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer='Adamax', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 class CustomCallback(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None):
-    if logs.get('val_accuracy') >= 0.53 :
+    if logs.get('val_accuracy') >= 0.60 :
       self.model.stop_training = True
 
 callback = CustomCallback()
