@@ -13,7 +13,7 @@ batch_size = 32
 # Define the data augmentation pipeline
 train_ds = train_ds.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
 
-train_ds = train_ds.map(lambda x, y: (tf.image.resize(x, (224,224), y))
+train_ds = train_ds.map(lambda x, y: (tf.image.resize(x, (224,224)), y))
 train_ds = train_ds.map(lambda x, y: (tf.image.random_flip_left_right(x), y))
 
 train_ds = train_ds.shuffle(buffer_size=1024)
@@ -21,7 +21,7 @@ train_ds = train_ds.batch(batch_size)
 train_ds = train_ds.prefetch(tf.data.AUTOTUNE)
 
 test_ds = test_ds.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
-test_ds = test_ds.map(lambda x, y: (tf.image.resize(x, (224,224), y))
+test_ds = test_ds.map(lambda x, y: (tf.image.resize(x, (224,224)), y))
 test_ds = test_ds.batch(batch_size)
 test_ds = test_ds.prefetch(tf.data.AUTOTUNE)
 
