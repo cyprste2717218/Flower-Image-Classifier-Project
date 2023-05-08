@@ -13,7 +13,7 @@ batch_size = 32
 # Define the data augmentation pipeline
 train_ds = train_ds.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
 
-train_ds = train_ds.map(lambda x, y: (tf.image.resize(x, (224,224), y))
+train_ds = train_ds.map(lambda x, y: (tf.image.resize(x, (224,224)), y))
 train_ds = train_ds.map(lambda x, y: (tf.image.random_flip_left_right(x), y))
 
 train_ds = train_ds.shuffle(buffer_size=1024)
@@ -21,7 +21,7 @@ train_ds = train_ds.batch(batch_size)
 train_ds = train_ds.prefetch(tf.data.AUTOTUNE)
 
 test_ds = test_ds.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
-test_ds = test_ds.map(lambda x, y: (tf.image.resize(x, (224,224), y))
+test_ds = test_ds.map(lambda x, y: (tf.image.resize(x, (224,224)), y))
 test_ds = test_ds.batch(batch_size)
 test_ds = test_ds.prefetch(tf.data.AUTOTUNE)
 
@@ -48,64 +48,74 @@ tf.keras.optimizers.Adamax(
 
 )
 
-class NetworkBlock(Layer):
+model = Sequential([
+    Conv2D(64,7,2),
+    ReLU(),
+    MaxPooling2D(3,2),
 
-  def __init__(self, out_channels, first_stride=1):
-    super().__init__()
+    Conv2D(64,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
+    Conv2D(64,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
 
-    first_padding = 'same'
-    if first_stride != 1:
-      first_padding = 'valid'
-    
-    self.conv_sequence = Sequential([
-        Conv2D(out_channels, 3, first_stride, padding=first_padding),
-        BatchNormalization(),
-        ReLU(),
+    Conv2D(64,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
+    Conv2D(64,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
 
-        Conv2D(out_channels, 3, 1, padding='same'),
-        BatchNormalization(),
-        ReLU()
-    ])
+    Conv2D(128,3,2,'valid'),
+    BatchNormalization(),
+    ReLU(),
+    Conv2D(128,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
 
-  def call(self, inputs):
-    x = self.conv_sequence(inputs)
+    Conv2D(128,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
+    Conv2D(128,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
 
-    if x.shape == inputs.shape:
-      x = x + inputs 
-    
-    return x
+    Conv2D(256,3,2,'valid'),
+    BatchNormalization(),
+    ReLU(),
+    Conv2D(256,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
 
-layer = NetworkBlock(4)
-print(layer)
+    Conv2D(256,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
+    Conv2D(256,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
 
-class NeuralNetwork(Model):
-  def __init__(self):
-    super(NeuralNetwork, self).__init__()
+    Conv2D(512,3,2,'valid'),
+    BatchNormalization(),
+    ReLU(),
+    Conv2D(512,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
 
-    self.conv_1 = Sequential([
-                              Conv2D(64, 7, 2),
-                              ReLU(),
-                              MaxPooling2D(3, 2)
-    ])
+    Conv2D(512,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
+    Conv2D(512,3,1,'same'),
+    BatchNormalization(),
+    ReLU(),
 
-    self.resnet_chains = Sequential([NetworkBlock(64), NetworkBlock(64)] +
-                                    [NetworkBlock(128, 2), NetworkBlock(128)] +
-                                    [NetworkBlock(256, 2), NetworkBlock(256)] +
-                                    [NetworkBlock(512, 2), NetworkBlock(512)] 
-                                    )
-    
-    self.out = Sequential([GlobalAveragePooling2D(),
-                           Dropout(0.8),
-                           Dense(102, activation='softmax')])
-    
-  def call(self, x):
-    x = self.conv_1(x)
-    x = self.resnet_chains(x)
-    x = self.out(x)
-    return x
+    GlobalAveragePooling2D(),
+    Dropout(0.8),
+    Dense(102, activation='softmax')
+])
 
-model = NeuralNetwork()
-print(model)
+
+
 
 
 
