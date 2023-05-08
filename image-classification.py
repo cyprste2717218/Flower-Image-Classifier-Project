@@ -5,32 +5,30 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import *
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 # Load the dataset
-train_data, test_data ,valid_data= tfds.load(name='oxford_flowers102', split=['train', 'test','validation'], as_supervised=True)
+train_ds, test_ds ,valid_ds= tfds.load(name='oxford_flowers102', split=['train', 'test','validation'], as_supervised=True)
 
 # Define the image size and batch size
-img_size = (224, 224)
 batch_size = 32
 
 # Define the data augmentation pipeline
-train_data = train_data.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
+train_ds = train_ds.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
 
-train_data = train_data.map(lambda x, y: (tf.image.resize(x, img_size), y))
-train_data = train_data.map(lambda x, y: (tf.image.random_flip_left_right(x), y))
+train_ds = train_ds.map(lambda x, y: (tf.image.resize(x, (224,224), y))
+train_ds = train_ds.map(lambda x, y: (tf.image.random_flip_left_right(x), y))
 
-train_data = train_data.shuffle(buffer_size=1024)
-train_data = train_data.batch(batch_size)
-train_data = train_data.prefetch(tf.data.AUTOTUNE)
+train_ds = train_ds.shuffle(buffer_size=1024)
+train_ds = train_ds.batch(batch_size)
+train_ds = train_ds.prefetch(tf.data.AUTOTUNE)
 
-test_data = test_data.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
+test_ds = test_ds.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
+test_ds = test_ds.map(lambda x, y: (tf.image.resize(x, (224,224), y))
+test_ds = test_ds.batch(batch_size)
+test_ds = test_ds.prefetch(tf.data.AUTOTUNE)
 
-test_data = test_data.map(lambda x, y: (tf.image.resize(x, img_size), y))
-test_data = test_data.batch(batch_size)
-test_data = test_data.prefetch(tf.data.AUTOTUNE)
-
-valid_data = valid_data.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
-valid_data = valid_data.map(lambda x, y: (tf.image.resize(x, (224,224)), y))
-valid_data = valid_data.batch(batch_size)
-valid_data = valid_data.prefetch(tf.data.AUTOTUNE)
+valid_ds = valid_ds.map(lambda x, y: (tf.image.central_crop(x, central_fraction=0.8), y))
+valid_ds = valid_ds.map(lambda x, y: (tf.image.resize(x, (224,224)), y))
+valid_ds = valid_ds.batch(batch_size)
+valid_ds = valid_ds.prefetch(tf.data.AUTOTUNE)
 
 
 tf.keras.optimizers.Adamax(
@@ -50,7 +48,7 @@ tf.keras.optimizers.Adamax(
 
 )
 
-class ResNetBlock(Layer):
+class NetworkBlock(Layer):
 
   def __init__(self, out_channels, first_stride=1):
     super().__init__()
@@ -73,16 +71,16 @@ class ResNetBlock(Layer):
     x = self.conv_sequence(inputs)
 
     if x.shape == inputs.shape:
-      x = x + inputs # Skip connection
+      x = x + inputs 
     
     return x
 
-layer = ResNetBlock(4)
+layer = NetworkBlock(4)
 print(layer)
 
-class ResNet(Model):
+class NeuralNetwork(Model):
   def __init__(self):
-    super(ResNet, self).__init__()
+    super(NeuralNetwork, self).__init__()
 
     self.conv_1 = Sequential([
                               Conv2D(64, 7, 2),
@@ -90,10 +88,10 @@ class ResNet(Model):
                               MaxPooling2D(3, 2)
     ])
 
-    self.resnet_chains = Sequential([ResNetBlock(64), ResNetBlock(64)] +
-                                    [ResNetBlock(128, 2), ResNetBlock(128)] +
-                                    [ResNetBlock(256, 2), ResNetBlock(256)] +
-                                    [ResNetBlock(512, 2), ResNetBlock(512)] 
+    self.resnet_chains = Sequential([NetworkBlock(64), NetworkBlock(64)] +
+                                    [NetworkBlock(128, 2), NetworkBlock(128)] +
+                                    [ResNetBlock(256, 2), NetworkBlock(256)] +
+                                    [NetworkBlock(512, 2), NetworkBlock(512)] 
                                     )
     
     self.out = Sequential([GlobalAveragePooling2D(),
@@ -106,21 +104,21 @@ class ResNet(Model):
     x = self.out(x)
     return x
 
-model = ResNet()
+model = NeuralNetwork()
 print(model)
 
 
 
 model.compile(optimizer='Adamax', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-class CustomCallback(tf.keras.callbacks.Callback):
+class MyCallBack(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None):
     if logs.get('val_accuracy') >= 0.60 :
       self.model.stop_training = True
 
-callback = CustomCallback()
+callback = MyCallBack()
 
 callback = CustomCallback()
-model.fit(train_data, epochs=300,validation_data = valid_data,validation_freq =1,callbacks=[callback])
+model.fit(train_ds, epochs=300,validation_data = valid_ds,validation_freq =1,callbacks=[callback])
 
-model.evaluate(test_data)
+model.evaluate(test_ds)
