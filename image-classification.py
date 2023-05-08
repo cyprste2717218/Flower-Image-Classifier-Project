@@ -48,74 +48,69 @@ tf.keras.optimizers.Adamax(
 
 )
 
-model = Sequential([
-    Conv2D(64,7,2),
-    ReLU(),
-    MaxPooling2D(3,2),
+class NetworkBlockOne(Layer):
 
-    Conv2D(64,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
-    Conv2D(64,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
+  def __init__(self, filters):
+    super().__init__()
 
-    Conv2D(64,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
-    Conv2D(64,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
+   
+    
+    self.convDouble = Sequential([
+        Conv2D(filters, 3, 2, padding='valid'),BatchNormalization(),ReLU(),
 
-    Conv2D(128,3,2,'valid'),
-    BatchNormalization(),
-    ReLU(),
-    Conv2D(128,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
+        Conv2D(filters, 3, 1, padding='same'),BatchNormalization(),ReLU()
+    ])
 
-    Conv2D(128,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
-    Conv2D(128,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
+  def call(self, params):
+    x = self.convDouble(params)
 
-    Conv2D(256,3,2,'valid'),
-    BatchNormalization(),
-    ReLU(),
-    Conv2D(256,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
+    if x.shape == params.shape:
+      x = x + params 
+    
+    return x
 
-    Conv2D(256,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
-    Conv2D(256,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
+class NetworkBlockTwo(Layer):
 
-    Conv2D(512,3,2,'valid'),
-    BatchNormalization(),
-    ReLU(),
-    Conv2D(512,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
+  def __init__(self, filters):
+    super().__init__()
 
-    Conv2D(512,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
-    Conv2D(512,3,1,'same'),
-    BatchNormalization(),
-    ReLU(),
+   
+    
+    self.convDouble = Sequential([
+        Conv2D(filters, 3, 1, padding='same'),BatchNormalization(),ReLU(),
 
-    GlobalAveragePooling2D(),
-    Dropout(0.8),
-    Dense(102, activation='softmax')
-])
+        Conv2D(filters, 3, 1, padding='same'),BatchNormalization(),ReLU()
+        ])
 
+  def call(self, params):
+    x = self.convDouble(params)
 
+    if x.shape == params.shape:
+      x = x + params 
+    
+    return x
 
+class NeuralNetwork(Model):
+  def __init__(self):
+    super(NeuralNetwork, self).__init__()
+
+    self.start = Sequential([Conv2D(64, 7, 2),ReLU(),MaxPooling2D(3, 2)])
+
+    self.resnetMiddle = Sequential([NetworkBlockOne(64), NetworkBlockTwo(64)] +
+                                    [NetworkBlockOne(128), NetworkBlockTwo(128)] +
+                                    [NetworkBlockOne(256), NetworkBlockTwo(256)] +
+                                    [NetworkBlockOne(512), NetworkBlockTwo(512)] 
+                                    )
+    
+    self.end = Sequential([GlobalAveragePooling2D(),Dropout(0.8),Dense(102, activation='softmax')])
+    
+  def call(self, x):
+    x = self.start(x)
+    x = self.resnetMiddle(x)
+    x = self.end(x)
+    return x
+
+model = NeuralNetwork()
 
 
 
