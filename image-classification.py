@@ -96,7 +96,7 @@ class NeuralNetwork(Model):
 
     self.start = Sequential([Conv2D(64, 7, 2),ReLU(),MaxPooling2D(3, 2)])
 
-    self.resnetMiddle = Sequential([NetworkBlockOne(64), NetworkBlockTwo(64)] +
+    self.resnetMiddle = Sequential([NetworkBlockTwo(64), NetworkBlockTwo(64)] +
                                     [NetworkBlockOne(128), NetworkBlockTwo(128)] +
                                     [NetworkBlockOne(256), NetworkBlockTwo(256)] +
                                     [NetworkBlockOne(512), NetworkBlockTwo(512)] 
@@ -118,7 +118,7 @@ model.compile(optimizer='Adamax', loss='sparse_categorical_crossentropy', metric
 
 class MyCallBack(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None):
-    if logs.get('val_accuracy') >= 0.60 :
+    if logs.get('val_accuracy') >= 0.58 :
       self.model.stop_training = True
 
 callback = MyCallBack()
