@@ -90,7 +90,7 @@ class NeuralNetwork(Model):
 
     self.resnet_chains = Sequential([NetworkBlock(64), NetworkBlock(64)] +
                                     [NetworkBlock(128, 2), NetworkBlock(128)] +
-                                    [ResNetBlock(256, 2), NetworkBlock(256)] +
+                                    [NetworkBlock(256, 2), NetworkBlock(256)] +
                                     [NetworkBlock(512, 2), NetworkBlock(512)] 
                                     )
     
