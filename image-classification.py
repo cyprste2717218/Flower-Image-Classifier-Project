@@ -116,13 +116,13 @@ model = NeuralNetwork()
 
 model.compile(optimizer='Adamax', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
+
 class MyCallBack(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None):
-    if logs.get('val_accuracy') >= 0.58 :
+    if logs.get('val_accuracy') >= 0.575 :
       self.model.stop_training = True
 
 callback = MyCallBack()
 
 model.fit(train_ds, epochs=300,validation_data = valid_ds,validation_freq =1,callbacks=[callback])
-
 model.evaluate(test_ds)
