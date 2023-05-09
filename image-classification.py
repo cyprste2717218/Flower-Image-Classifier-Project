@@ -48,76 +48,81 @@ tf.keras.optimizers.Adamax(
 
 )
 
-class NetworkBlock(Layer):
+class NetworkBlockOne(Layer):
 
-  def __init__(self, out_channels, first_stride=1):
+  def __init__(self, filters):
     super().__init__()
 
-    first_padding = 'same'
-    if first_stride != 1:
-      first_padding = 'valid'
+   
     
-    self.conv_sequence = Sequential([
-        Conv2D(out_channels, 3, first_stride, padding=first_padding),
-        BatchNormalization(),
-        ReLU(),
+    self.convDouble = Sequential([
+        Conv2D(filters, 3, 2, padding='valid'),BatchNormalization(),ReLU(),
 
-        Conv2D(out_channels, 3, 1, padding='same'),
-        BatchNormalization(),
-        ReLU()
+        Conv2D(filters, 3, 1, padding='same'),BatchNormalization(),ReLU()
     ])
 
-  def call(self, inputs):
-    x = self.conv_sequence(inputs)
+  def call(self, params):
+    x = self.convDouble(params)
 
-    if x.shape == inputs.shape:
-      x = x + inputs 
+    if x.shape == params.shape:
+      x = x + params 
     
     return x
 
-layer = NetworkBlock(4)
-print(layer)
+class NetworkBlockTwo(Layer):
+
+  def __init__(self, filters):
+    super().__init__()
+
+   
+    
+    self.convDouble = Sequential([
+        Conv2D(filters, 3, 1, padding='same'),BatchNormalization(),ReLU(),
+
+        Conv2D(filters, 3, 1, padding='same'),BatchNormalization(),ReLU()
+        ])
+
+  def call(self, params):
+    x = self.convDouble(params)
+
+    if x.shape == params.shape:
+      x = x + params 
+    
+    return x
 
 class NeuralNetwork(Model):
   def __init__(self):
     super(NeuralNetwork, self).__init__()
 
-    self.conv_1 = Sequential([
-                              Conv2D(64, 7, 2),
-                              ReLU(),
-                              MaxPooling2D(3, 2)
-    ])
+    self.start = Sequential([Conv2D(64, 7, 2),ReLU(),MaxPooling2D(3, 2)])
 
-    self.resnet_chains = Sequential([NetworkBlock(64), NetworkBlock(64)] +
-                                    [NetworkBlock(128, 2), NetworkBlock(128)] +
-                                    [NetworkBlock(256, 2), NetworkBlock(256)] +
-                                    [NetworkBlock(512, 2), NetworkBlock(512)] 
+    self.resnetMiddle = Sequential([NetworkBlockTwo(64), NetworkBlockTwo(64)] +
+                                    [NetworkBlockOne(128), NetworkBlockTwo(128)] +
+                                    [NetworkBlockOne(256), NetworkBlockTwo(256)] +
+                                    [NetworkBlockOne(512), NetworkBlockTwo(512)] 
                                     )
     
-    self.out = Sequential([GlobalAveragePooling2D(),
-                           Dropout(0.8),
-                           Dense(102, activation='softmax')])
+    self.end = Sequential([GlobalAveragePooling2D(),Dropout(0.8),Dense(102, activation='softmax')])
     
   def call(self, x):
-    x = self.conv_1(x)
-    x = self.resnet_chains(x)
-    x = self.out(x)
+    x = self.start(x)
+    x = self.resnetMiddle(x)
+    x = self.end(x)
     return x
 
 model = NeuralNetwork()
-print(model)
 
 
 
 model.compile(optimizer='Adamax', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
+
 class MyCallBack(tf.keras.callbacks.Callback):
   def on_epoch_end(self, epoch, logs=None):
-    if logs.get('val_accuracy') >= 0.60 :
+    if logs.get('val_accuracy') >= 0.575 :
       self.model.stop_training = True
 
 callback = MyCallBack()
 
 model.fit(train_ds, epochs=300,validation_data = valid_ds,validation_freq =1,callbacks=[callback])
-
 model.evaluate(test_ds)
